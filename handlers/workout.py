@@ -1,4 +1,3 @@
-
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -21,7 +20,7 @@ async def start_workout(message: Message, state: FSMContext):
         return
     recharge_energy(user, db)
     if user.energy < 5:
-        await message.answer(f"Не хватает энергии ({user.energy}/100). Подожди или купи энергию (/energy).", reply_markup=main_keyboard())
+        await message.answer(f"Не хватает энергии ({user.energy}/100).", reply_markup=main_keyboard())
         db.close()
         return
     workout = Workout(user_id=user.id)
@@ -30,7 +29,7 @@ async def start_workout(message: Message, state: FSMContext):
     await state.update_data(workout_id=workout.id)
     exercises = db.query(Exercise).all()
     if not exercises:
-        await message.answer("Нет упражнений в базе. Добавьте через админ-команду.")
+        await message.answer("Нет упражнений в базе.")
         db.close()
         return
     await message.answer("Выбери упражнение:", reply_markup=workout_choice_keyboard(exercises))
@@ -46,7 +45,8 @@ async def select_exercise(callback: CallbackQuery, state: FSMContext):
         await callback.answer("Упражнение не найдено")
         db.close()
         return
-    await state.update_data(current_exercise_id=ex_id, current_exercise_name=exercise.name, min_reps=exercise.min_reps)
+    await state.update_data(current_exercise_id=ex_id, current_exercise_name=exercise.name)
+    # Меняем текст сообщения на запрос количества повторений
     await callback.message.edit_text(f"🏋️ {exercise.name}\nМинимальное количество для полных XP: {exercise.min_reps}\nСколько раз сделал(а)? (введи число)")
     await state.set_state(WorkoutState.waiting_reps)
     await callback.answer()
@@ -84,10 +84,10 @@ async def process_reps(message: Message, state: FSMContext):
     db.commit()
     await message.answer(f"✅ {exercise.name}: {reps} раз → +{xp} XP\n{msg}")
     if leveled:
-        await message.answer(f"🎉 Поздравляю! Твой уровень '{exercise.attribute}' повышен до {new_level}!")
+        await message.answer(f"🎉 Уровень '{exercise.attribute}' повышен до {new_level}!")
     exercises = db.query(Exercise).all()
     await message.answer("Что дальше?", reply_markup=workout_choice_keyboard(exercises))
-    await state.update_state(WorkoutState.choosing_exercise)
+    await state.set_state(WorkoutState.choosing_exercise)
     db.close()
 
 @router.callback_query(WorkoutState.choosing_exercise, F.data == "finish_workout")
@@ -100,7 +100,7 @@ async def finish_workout(callback: CallbackQuery, state: FSMContext):
         workout.completed = 1
         db.commit()
         total_xp = workout.total_xp
-        await callback.message.edit_text(f"🏁 Тренировка завершена! Получено всего XP: {total_xp}.\nТеперь ответь на пару вопросов.")
+        await callback.message.edit_text(f"🏁 Тренировка завершена! Получено XP: {total_xp}.\nТеперь ответь на пару вопросов.")
     else:
         await callback.message.edit_text("Тренировка завершена.")
     await callback.answer()
