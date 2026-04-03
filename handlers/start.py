@@ -35,13 +35,17 @@ async def set_goal(callback: CallbackQuery):
         character = Character(user_id=user.id)
         db.add(character)
         db.commit()
+        # Исправлено: редактируем сообщение без клавиатуры
         await callback.message.edit_text(
-            f"🎉 Отлично! Твой персонаж создан. Цель: {goal}. Теперь ты можешь тренироваться.",
-            reply_markup=main_keyboard()
+            f"🎉 Отлично! Твой персонаж создан. Цель: {goal}. Теперь ты можешь тренироваться."
         )
+        # Отправляем новое сообщение с обычной клавиатурой
+        await callback.message.answer("Выбери действие:", reply_markup=main_keyboard())
     else:
         user.goal = goal
         db.commit()
         await callback.message.edit_text(f"Цель изменена на {goal}.")
+        # Если нужно показать клавиатуру после смены цели – тоже отправляем новое сообщение
+        await callback.message.answer("Выбери действие:", reply_markup=main_keyboard())
     await callback.answer()
     db.close()
