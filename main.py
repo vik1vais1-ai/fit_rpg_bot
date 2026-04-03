@@ -1,11 +1,13 @@
 import asyncio
 import logging
+import threading
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from config import BOT_TOKEN
 from database import Base, engine, SessionLocal
 from handlers import start, profile, workout, energy, top, survey
 from models import Exercise
+from flask import Flask
 
 # Создаём таблицы
 Base.metadata.create_all(bind=engine)
@@ -35,6 +37,20 @@ def init_exercises():
         db.close()
 
 init_exercises()
+
+# --- Веб-сервер для Render (чтобы не убивал процесс) ---
+app = Flask(__name__)
+
+@app.route('/')
+def health():
+    return "Bot is running", 200
+
+def run_web():
+    app.run(host='0.0.0.0', port=8000)
+
+# Запускаем веб-сервер в отдельном потоке
+threading.Thread(target=run_web, daemon=True).start()
+# ----------------------------------------------------
 
 async def main():
     bot = Bot(token=BOT_TOKEN)
