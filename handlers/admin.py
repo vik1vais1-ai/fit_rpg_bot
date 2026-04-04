@@ -9,8 +9,8 @@ import os
 
 router = Router()
 
-# ID твоего Telegram (замени на свой)
-ADMIN_ID = 1065961610  # 👈 ВСТАВЬ СВОЙ ID (можно узнать у @userinfobot)
+# ЗАМЕНИ НА СВОЙ TELEGRAM ID (узнай у @userinfobot)
+ADMIN_ID = 1065961610  # 👈 СЮДА ВСТАВЬ СВОЙ ID
 
 @router.message(Command("migrate_db"))
 async def migrate_to_postgres(message: Message):
@@ -20,12 +20,12 @@ async def migrate_to_postgres(message: Message):
 
     await message.answer("🔄 Начинаю миграцию из SQLite в PostgreSQL...")
 
-    # 1. Подключаемся к SQLite (текущая база)
+    # 1. Подключаемся к SQLite
     sqlite_engine = create_engine('sqlite:///./fit_rpg.db')
     SQLiteSessionLocal = sessionmaker(bind=sqlite_engine)
     sqlite_db = SQLiteSessionLocal()
 
-    # 2. Подключаемся к PostgreSQL (из переменной окружения)
+    # 2. Подключаемся к PostgreSQL
     postgres_url = os.environ.get("DATABASE_URL")
     if not postgres_url:
         await message.answer("❌ Переменная DATABASE_URL не установлена.")
@@ -36,11 +36,11 @@ async def migrate_to_postgres(message: Message):
     PostgresSessionLocal = sessionmaker(bind=postgres_engine)
     postgres_db = PostgresSessionLocal()
 
-    # 3. Создаём таблицы в PostgreSQL (если ещё нет)
+    # 3. Создаём таблицы в PostgreSQL
     from models import Base
     Base.metadata.create_all(bind=postgres_engine)
 
-    # 4. Переносим данные
+    # 4. Список моделей для переноса
     models_list = [
         (Exercise, 'exercises'),
         (User, 'users'),
@@ -68,4 +68,3 @@ async def migrate_to_postgres(message: Message):
     sqlite_db.close()
     postgres_db.close()
     await message.answer("🎉 Миграция завершена! Теперь бот использует PostgreSQL. Можно перезапустить сервис вручную.")
-
