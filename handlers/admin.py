@@ -12,8 +12,7 @@ from models import User, Character, Workout, WorkoutExercise, Exercise, Base
 router = Router()
 
 # ЗАМЕНИ НА СВОЙ TELEGRAM ID
-ADMIN_ID = 123456789
-
+ADMIN_ID = 1065961610
 @router.message(Command("migrate_db"))
 async def migrate_to_postgres(message: Message):
     if message.from_user.id != ADMIN_ID:
